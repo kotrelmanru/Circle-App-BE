@@ -1,0 +1,75 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       String @id @default(uuid())
+  fullname String
+  email    String
+  password String
+  threads   Thread[]
+  follower Follow[] @relation("follower")
+  following Follow[] @relation("following")
+  Like      Like[]
+  profile UserProfile?
+}
+
+model UserProfile {
+  id String @id @default(uuid())
+  username String
+  photoProfile String
+  cover String
+  bio String
+  userId String @unique
+  User  User @relation(fields: [userId],references: [id],onDelete: Cascade)
+}
+
+model Thread {
+  id      String @id @default(uuid())
+  content String
+  userId  String
+  threadId String?
+  author  User @relation(fields: [userId], references: [id],onDelete: Cascade)
+  images  Image[]
+  like    Like[]
+  parents Thread?   @relation("reply",fields: [threadId],references: [id],onDelete: Cascade)
+  reply   Thread[]  @relation("reply")
+  createdAt DateTime @default(now())
+  updatedAt DateTime?
+}
+
+model Image {
+  id Int @id @default(autoincrement())
+  imageUrl String
+  threadId String
+  thread   Thread @relation(fields: [threadId], references: [id],onDelete: Cascade)
+}
+
+model Follow {
+  follower  User @relation("follower",fields: [followerId],references: [id],onDelete: Cascade)
+  followerId String
+  following User @relation("following", fields: [followingId],references: [id],onDelete: Cascade)
+  followingId String
+  isFollow Boolean @default(true)
+  @@id([followerId,followingId])
+}
+
+model Like {
+  userId String
+  threadId String
+  user User @relation(fields: [userId],references: [id],onDelete: Cascade)
+  thread Thread @relation(fields: [threadId],references: [id],onDelete: Cascade)
+
+  @@id([userId,threadId])
+}
